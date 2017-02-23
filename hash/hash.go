@@ -27,10 +27,10 @@ type Algorithm uint
 func (alg Algorithm) Sum(msg, key []byte) ([]byte, error) {
 	h, err := alg.New(key)
 	if err != nil {
-		return nil, error
+		return nil, err
 	}
 	h.Write(msg)
-	return h.Sum(nil)
+	return h.Sum(nil), nil
 }
 
 // New returns a hash.Hash computing a cryptographic hash (or MAC if key != nil)..
