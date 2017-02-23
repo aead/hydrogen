@@ -69,7 +69,7 @@ func (alg Algorithm) Encrypt(ciphertext, plaintext, additionalData, nonce, key [
 // Decrypt decrypts and checks integrity of the ciphertext and writes the result to plaintext.
 // This function is the inverse operation of Encrypt.
 // A non-nil error indicates, that the encryption operation failed - especially modifed ciphertext
-// or additionalData leads to different authentication tag and causes this function to fail with additionalData
+// or additionalData leads to different authentication tag and causes this function to fail with a
 // non-nil error.
 func (alg Algorithm) Decrypt(plaintext, ciphertext, additionalData, nonce, key []byte) (err error) {
 	c, err := alg.newCipher(key)
