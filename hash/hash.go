@@ -15,37 +15,26 @@ const (
 	BLAKE2b_512 Algorithm = 1 + iota
 	BLAKE2b_384
 	BLAKE2b_256
-	SipHash_2_4
 )
 
-var (
-	errUnknownAlgorithm = errors.New("libsodium/hash: unknown algorithm")
-)
+var errUnknownAlgorithm = errors.New("libsodium/hash: unknown algorithm")
 
+// Algorithm identifies a cryptographic hash function.
 type Algorithm uint
 
-func Sum(alg Algorithm, key []byte) ([]byte, error) {
-	var h hash.Hash
-	var err error
-
-	switch alg {
-	default:
-		err = errUnknownAlgorithm
-	case BLAKE2b_512:
-		h, err = blake2b.New512(key)
-	case BLAKE2b_384:
-		h, err = blake2b.New512(key)
-	case BLAKE2b_256:
-		h, err = blake2b.New512(key)
-	}
-
+// Sum returns the cryptographic hash value of msg. If the
+// key is not nil, this function returns the MAC of msg.
+func (alg Algorithm) Sum(msg, key []byte) ([]byte, error) {
+	h, err := alg.New(key)
 	if err != nil {
-		return nil, err
+		return nil, error
 	}
-	return h.Sum(nil), nil
+	h.Write(msg)
+	return h.Sum(nil)
 }
 
-func New(alg Algorithm, key []byte) (hash.Hash, error) {
+// New returns a hash.Hash computing a cryptographic hash (or MAC if key != nil)..
+func (alg Algorithm) New(key []byte) (hash.Hash, error) {
 	switch alg {
 	default:
 		return nil, errUnknownAlgorithm
