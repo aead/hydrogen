@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
-// Package subtle implements some function that are often useful
+// Package subtle implements some functions that are often useful
 // in cryptographic code. All functions in subtle take constant time.
 package subtle
 
