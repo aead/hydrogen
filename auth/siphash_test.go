@@ -50,3 +50,36 @@ var vectors = []string{
 	"91be4de60f5ba40ea02cbefd2072a1f9", "cd0b02ef791b0e206c38ae90109a561e", "80d0ca00aab2b1bdab63fc5237c908f1", "95f82495193d28373f5f661d6284a641",
 	"1f622a4201c740db47dbc1b244c2afc8", "8b2de6c0ac314ddba29d49eb58c2a31d", "6e04979c2cf8f5bc7616b35da54f089c", "17c193f5ffa3e315c2a744f32b7b779c",
 }
+
+func benchWrite(size int, b *testing.B) {
+	key := make([]byte, KeySize)
+	context := []byte("runbench")
+	msg := make([]byte, size)
+
+	h := New(context, key)
+	b.SetBytes(int64(size))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		h.Write(msg)
+	}
+}
+
+func BenchmarkWrite8(b *testing.B)  { benchWrite(8, b) }
+func BenchmarkWrite64(b *testing.B) { benchWrite(64, b) }
+func BenchmarkWrite1K(b *testing.B) { benchWrite(1024, b) }
+
+func benchSum(size int, b *testing.B) {
+	key := make([]byte, KeySize)
+	context := []byte("runbench")
+	msg := make([]byte, size)
+
+	b.SetBytes(int64(size))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Sum(msg, context, key)
+	}
+}
+
+func BenchmarkSum8(b *testing.B)  { benchSum(8, b) }
+func BenchmarkSum64(b *testing.B) { benchSum(64, b) }
+func BenchmarkSum1K(b *testing.B) { benchSum(1024, b) }
