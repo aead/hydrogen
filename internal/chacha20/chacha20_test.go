@@ -29,14 +29,6 @@ func TestVectors(t *testing.T) {
 		if !bytes.Equal(dst, keystream) {
 			t.Errorf("%d:\ngot:  %s\nwant: %s", i, hex.EncodeToString(dst), hex.EncodeToString(keystream))
 		}
-		dst = make([]byte, len(keystream))
-
-		c := NewCipher(nonce, key)
-		c.XORKeyStream(dst[:1], dst[:1])
-		c.XORKeyStream(dst[1:], dst[1:])
-		if !bytes.Equal(dst, keystream) {
-			t.Errorf("%d:\ngot:  %s\nwant: %s", i, hex.EncodeToString(dst), hex.EncodeToString(keystream))
-		}
 	}
 }
 

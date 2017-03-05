@@ -37,6 +37,9 @@ func XORKeyStream(dst, src, nonce, key []byte) {
 	if k := len(key); k != KeySize {
 		panic("hydrogen/internal/chacha20: invalid key size " + strconv.Itoa(k))
 	}
+	if len(dst) < len(src) {
+		panic("hydrogen/internal/chacha20: dst buffer is to small")
+	}
 	var block, state [64]byte
 	switch n := len(nonce); n {
 	default:
@@ -51,75 +54,6 @@ func XORKeyStream(dst, src, nonce, key []byte) {
 		copy(state[56:], nonce[16:])
 	}
 	xorKeyStream(dst, src, &block, &state)
-}
-
-// NewCipher returns a chacha20.Cipher implementing either ChaCha20/12
-// or XChaCha20/12 depending on the length of the nonce:
-// - 12 bytes: ChaCha20/12
-// - 24 bytes: XChaCha20/12
-// If the nonce is neither 12 nor 24 bytes long, this function panics.
-func NewCipher(nonce, key []byte) *Cipher {
-	if k := len(key); k != KeySize {
-		panic("hydrogen/internal/chacha20: invalid key size " + strconv.Itoa(k))
-	}
-
-	switch n := len(nonce); n {
-	default:
-		panic("hydrogen/internal/chacha20: invalid nonce size " + strconv.Itoa(n))
-	case NonceSize:
-		c := &Cipher{noncesize: NonceSize}
-		copy(c.state[:16], sigma[:])
-		copy(c.state[16:48], key)
-		copy(c.state[52:], nonce)
-		return c
-	case XNonceSize:
-		c := &Cipher{noncesize: XNonceSize}
-		copy(c.state[:16], sigma[:])
-		hChaCha20(c.state[16:48], nonce[:16], key)
-		copy(c.state[56:], nonce[16:])
-		return c
-	}
-}
-
-// Cipher represents either a ChaCha20/12 or XChaCha20/12 stream cipher.
-type Cipher struct {
-	state, block [64]byte
-	off          int
-	noncesize    int
-}
-
-// XORKeyStream XORs each byte in the given slice with a byte from the
-// cipher's key stream. Dst and src may point to the same memory.
-// If len(dst) < len(src), XORKeyStream should panic. It is acceptable
-// to pass a dst bigger than src, and in that case, XORKeyStream will
-// only update dst[:len(src)] and will not touch the rest of dst.
-func (c *Cipher) XORKeyStream(dst, src []byte) {
-	if len(dst) < len(src) {
-		panic("hydrogen/internal/chacha20: dst buffer is to small")
-	}
-
-	if c.off > 0 {
-		n := len(c.block[c.off:])
-		if len(src) <= n {
-			for i, v := range src {
-				dst[i] = v ^ c.block[c.off]
-				c.off++
-			}
-			if c.off == 64 {
-				c.off = 0
-			}
-			return
-		}
-
-		for i, v := range c.block[c.off:] {
-			dst[i] = src[i] ^ v
-		}
-		src = src[n:]
-		dst = dst[n:]
-		c.off = 0
-	}
-
-	c.off += xorKeyStream(dst, src, &(c.block), &(c.state))
 }
 
 // HChaCha20 computes HChaCha20/12 using the given key-nonce
@@ -139,4 +73,17 @@ func HChaCha20(dst []byte, nonce []byte, key []byte) {
 		panic("hydrogen/internal/chacha20: invalid key size " + strconv.Itoa(k))
 	}
 	hChaCha20(dst, nonce, key)
+}
+
+// Core generates 64 bytes of ChaCha20/12 keystream using the given
+// key-nonce combination and writes the result to dst. Therefore key
+// must be 32 and nonce must be 16 bytes long.
+func Core(dst *[64]byte, nonce []byte, key []byte) {
+	if k := len(key); k != KeySize {
+		panic("hydrogen/internal/chacha20: invalid key size " + strconv.Itoa(k))
+	}
+	if n := len(nonce); n != 16 {
+		panic("hydrogen/internal/chacha20: invalid nonce size " + strconv.Itoa(n))
+	}
+	core(dst, nonce, key)
 }
