@@ -51,3 +51,44 @@ var vectors = []struct {
 		"6898eb04f3d151985e28e882f35daf28d2a1689f79081ffb08cdc48edbbd3dcd683c764f3dd7302293928ca3d4ef4194e6e22f41a72204a14b89115d06ca29fb0b9f6eba3da6793a928afe76cdf62a5d5b0898bb9bb2348612189fdb825e5aa7559c9ec79ff80d05079fad81e9bc2521b2ebcb179cebeade91f20ff3e13192d60de2ee983ec07047e7827594773c28448d89e9b96bb0f8665b1a56f85abebd584a446e17d5a6fb847a1dbf341ece5124ff5f80d4a57fb7edf65a2907939b2f3c9654ccbfa2e5225edc8d799bf7ce296d6c8f9234cec0bd7b91b3d2ddc27f93ff8591ddb362b54fab111a7da9d5b4187661ed0e691f7aa5959fb83112427a95bbeb",
 	},
 }
+
+func BenchmarkCore(b *testing.B) {
+	var dst [64]byte
+	key := make([]byte, KeySize)
+	nonce := make([]byte, 16)
+
+	b.SetBytes(64)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Core(&dst, nonce, key)
+	}
+}
+
+func BenchmarkHChaCha12(b *testing.B) {
+	dst := make([]byte, 32)
+	key := make([]byte, KeySize)
+	nonce := make([]byte, 16)
+
+	b.SetBytes(64)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		HChaCha20(dst[:], nonce, key)
+	}
+}
+
+func benchXORKeyStream(size, nsize int, b *testing.B) {
+	key := make([]byte, KeySize)
+	nonce := make([]byte, nsize)
+	buf := make([]byte, size)
+
+	b.SetBytes(int64(size))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		XORKeyStream(buf, buf, nonce, key)
+	}
+}
+
+func BenchmarkChaCha12_64(b *testing.B)    { benchXORKeyStream(64, NonceSize, b) }
+func BenchmarkChaCha12_1024(b *testing.B)  { benchXORKeyStream(1024, NonceSize, b) }
+func BenchmarkXChaCha12_64(b *testing.B)   { benchXORKeyStream(64, XNonceSize, b) }
+func BenchmarkXChaCha12_1024(b *testing.B) { benchXORKeyStream(1024, XNonceSize, b) }

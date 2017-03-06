@@ -50,3 +50,36 @@ func TestTolerance(t *testing.T) {
 		key[i%32] += byte(i)
 	}
 }
+
+func benchEncrypt(size int, b *testing.B) {
+	key := make([]byte, KeySize)
+	context := make([]byte, 8)
+	msg := make([]byte, size)
+	ciphertext := make([]byte, size+HeaderSize)
+
+	b.SetBytes(int64(size))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Encrypt(ciphertext, msg, 0, nil, context, key)
+	}
+}
+
+func BenchmarkEncrypt64(b *testing.B)   { benchEncrypt(64, b) }
+func BenchmarkEncrypt1024(b *testing.B) { benchEncrypt(1024, b) }
+
+func benchDecrypt(size int, b *testing.B) {
+	key := make([]byte, KeySize)
+	context := make([]byte, 8)
+	msg := make([]byte, size)
+	ciphertext := make([]byte, size+HeaderSize)
+	Encrypt(ciphertext, msg, 0, nil, context, key)
+
+	b.SetBytes(int64(size))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Decrypt(msg, ciphertext, 0, context, key)
+	}
+}
+
+func BenchmarkDecrypt64(b *testing.B)   { benchEncrypt(64, b) }
+func BenchmarkDecrypt1024(b *testing.B) { benchEncrypt(1024, b) }
