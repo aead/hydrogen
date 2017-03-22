@@ -120,8 +120,8 @@ func (d *digest) Write(p []byte) (n int, err error) {
 	d.ctr += byte(n)
 
 	if d.off > 0 {
-		dif := TagSize - d.off
-		if n <= dif {
+		dif := BlockSize - d.off
+		if n < dif {
 			d.off += copy(d.buf[d.off:], p)
 			return
 		}

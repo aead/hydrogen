@@ -22,33 +22,50 @@ func TestVectors(t *testing.T) {
 	context := []byte("libtests")
 	key := fromHex("000102030405060708090a0b0c0d0e0f")
 	msg := make([]byte, 64)
+	h := New(context, key)
 	for i, v := range vectors {
 		msg[i] = byte(i)
 
-		tag := Sum(msg, context, key)
+		h.Write(msg[:i])
+		sum := h.Sum(nil)
+		if !bytes.Equal(sum, fromHex(v)) {
+			t.Fatalf("%d (single write): got:  %s - want: %s", i, hex.EncodeToString(sum), v)
+		}
+		h.Reset()
+
+		for j := 0; j < i; j++ {
+			h.Write(msg[j : j+1])
+		}
+		sum = h.Sum(nil)
+		if !bytes.Equal(sum, fromHex(v)) {
+			t.Fatalf("%d (multi write): got:  %s - want: %s", i, hex.EncodeToString(sum), v)
+		}
+		h.Reset()
+
+		tag := Sum(msg[:i], context, key)
 		if !bytes.Equal(tag[:], fromHex(v)) {
-			t.Errorf("Failed at %d:\ngot:  %s\nwant: %s", i, hex.EncodeToString(tag[:]), v)
+			t.Fatalf("%d (sum): got:  %s - want: %s", i, hex.EncodeToString(tag[:]), v)
 		}
 	}
 }
 
 var vectors = []string{
-	"f896e134f1a0c57e3caa11d37b48b5f3", "6df99f0e43e07c965c8b0f73d2ac9cd9", "ed001efc0e97d65b029bc997ef5f583b", "345e55d3a5b85574f38ee7b2662eb2eb",
-	"6a6e245fda79d718f22e2cbe8d4556fd", "4850fc430a8055b96403324f4071b076", "99035dee17cdcddb9da4e5d9c5152ab2", "2477c9803dcbb6a86c4712374b205d9e",
-	"916a038d182135002cdee0a61d2cb4b0", "62decae7c1e724dda73336e9956d2c4d", "c7c923bdbeb69074d918b7ed31b03dc2", "af95b43e7e939e1c5d55797a34d9343d",
-	"cbb9fb310be777185e562b6b2b9a7548", "2baf051709deaebf4fcb387625ad8af4", "3a056cc5c9f18f31b00dc9d14766594c", "9bcfe38d12cfbfce83f4029458484961",
-	"6e563359b4f674834aceeb80dd2eca04", "c8a4cd6594f79b3df6bf1426d5ffdb96", "751289b7ae385295309d62ae0ae7e9b2", "e56732e9505db8ab6823a2fcf6073f18",
-	"ff793ba05b33ad2b40a28eed9bc5c9cc", "be07061fedca56082de9042a0ca18efe", "726d65f0eb9eb73999b316b3403e8551", "7b7f1cb11a1d589054f96ded6780b385",
-	"c8614e59fb9d2f45d920b0e31ff70ba9", "97f7c865af57c4064532e5f3e47d0ee3", "fc6eed3abb33870978e01925931c2c77", "68517491cc1c0159039adef40e4a5884",
-	"53f59cf2da263c41e11e4431f21ba975", "a042397d1177281ecfdeb94c7dada4b8", "2030770f95d4b08e6fe059158bfaaa80", "b8a4242bb9ecf78a30fbe1229a1cafca",
-	"5e25dafd501eafde576bf1556bfa8c7b", "35310328ee7312987b1438f00cbd732b", "56379aa5f4ec19e52e1cbedb6cd54cf4", "b5d6db8d32c0614f87205cdeb43ec151",
-	"303ae259d78a95b82a46cea9ca78d478", "d293b47452d4aab18cc01e80e63929bc", "808cceaa44a6d89eac19cca7f4f2a9a9", "a77c20c1fdc5db759e03f7394b10762e",
-	"98c96bb66c170d184f394765decc87b8", "2308d737a6f27aeb18d76276223c4908", "91129370532baedb45aa01a72c517c77", "cd74314bb04228f71dd546e352ed19d6",
-	"b2a422f69dab7b80f9c79f3601d27f5f", "658a50433acdea6f9c46888e2e4964cd", "ea2c33e0b9f1a241d4b90d2dc684e609", "068ea33c5d4fb4935ecc5bebd8a93d48",
-	"d58e48c555dbadc09bff32223512398f", "07b69429bf3e7db8ac65a1099feeaa5f", "17a0607f65a4c6257d9f321a5bf7b4f2", "5f404445854ddab9c463f35fadc2cff8",
-	"613bee96449b8c0cd52c2253a6635841", "c3fa9171de16beaf68ccffd49c1d10bb", "fa7fd667a792c36633a46556b19c324f", "dba0acbe3d5a0ad6b3e7a731820b153d",
-	"91be4de60f5ba40ea02cbefd2072a1f9", "cd0b02ef791b0e206c38ae90109a561e", "80d0ca00aab2b1bdab63fc5237c908f1", "95f82495193d28373f5f661d6284a641",
-	"1f622a4201c740db47dbc1b244c2afc8", "8b2de6c0ac314ddba29d49eb58c2a31d", "6e04979c2cf8f5bc7616b35da54f089c", "17c193f5ffa3e315c2a744f32b7b779c",
+	"f007303cdc342cbcc97f50ac927fbd18", "63eaa3aa546391b8f9970812754febd0", "0e2de8341a79d492e8a5a91ed6664eb7", "9d284cd00663c66564489945b353127a",
+	"71d4f0d2def6e3c475f0d97ce47cff3f", "d177f628fdd3d7677acde18e511f6aa9", "69dbb986e9b4d972d4a2c574915e07f1", "c6a354e08593e02a3f510c2120f0be0b",
+	"323dbece090349e8b3c40a6d27b94d16", "5b5d046aebd78324129b6f860fd11342", "eed90dafb8909fa86b18ff866bb0a17b", "aa1398a834becc3a8dc13c6b776e73b7",
+	"28bd80e78bafb9c473e52c0352bf9fc3", "4c3d644f514465b0ee337f8ebb224909", "17c0d9326491f50b7a9c3a3408539e2f", "2b5cb3b89182bd6ba223aca5d9eca070",
+	"954c1bdb736d683cc14e2b7c9b8a149f", "3a1813a77f8712adee7fc06be8b0c79f", "d3b2dd766512023d3948a5dff330a34c", "b13c74b68aaad20433c88c0ffbc104ce",
+	"aed0d7c0b6911d3e41fae4db1401af4e", "48d6d6d63aba9615c5560ca7bc7815e0", "7d1ddc6fa6777328e0a2a2503f4b5c76", "fb37612e2c6d704c2d7aeff2f8b631e4",
+	"a9ef07eecc60fd1270a67049f3871299", "0c356ce6fd8b80fda2e53d33c86e1f32", "7b24d10fcf330b28c64c4e4a493bd0d5", "89aecacd06ceeb42523c27ea7e87aa67",
+	"97694e5b647816d397d661e97969b853", "db0908df19cf60e174db082024e6f86a", "feffa391a5f4d19ffd6d47b5e409a9e1", "46a87f9493d5d559be74fded01245b50",
+	"6298c18874e2f1c2fff26dee4be5f517", "2607506329d0473aa0633665bd3959bd", "30821af9db4f7c6b93847ae2e6ae24ba", "61e4c68f48aa5a597044b800fc7dfa22",
+	"35d8b473e42ee9ba62ccc3efe7e5faa0", "d11a5779457bc74eb1ee761cd9457abe", "e42ec3a5f8b1119a0cca7ea3f7986e71", "52c658df09fc4c82fe916a18271ab3a7",
+	"a3e9d605c7021b31e4300adc8e71642a", "a2d8db12b7cbc100f066e3ef6b347d26", "f3c43ca49c69d92325732eabc571dc11", "361ed4e7caeb1e3c823ffea0abbde84d",
+	"be15bc07b765b6a3f6b225a33c622fd0", "4eace2d98f7f9489e65f6cef64d3ef88", "2dc35561bb2fcff3f926fcb7914082fd", "2914afd25859eaaf4990b14b7f4f6e44",
+	"539f4b40858d9f73821a1d0e436e7015", "c3ab67641dc5dcae2880557fb1b6a201", "380b69a63523f3ac6de5a4bae8e766e7", "9072651cd86de6eff318abff5a7b580e",
+	"a9418ccb168e5105894319f638269c4b", "7eb52c4528dce4dac667b63bb1b5e88b", "79b773cf3719986ed3ff912235c0e726", "0a57ae44eace6962ddcca46b4c739e80",
+	"7eaa28101d30517d2361ca2dae15c090", "f3bc3ebc008c55b57f970f94006f6a9f", "0a5f93ee7110a36907cf40fe2c7f53df", "cec8f9c25c24847b9ece8994cc8189bb",
+	"e54ded96d7f52a68212bdecf804261d0", "46f1655d1611932cd0795a888fabd2a5", "adf2f6000077ddebd240f9797bbf8f57", "0013765ea34785ef1ffeebe345a2a66a",
 }
 
 func benchWrite(size int, b *testing.B) {
